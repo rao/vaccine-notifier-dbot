@@ -1,9 +1,9 @@
+// currently only monitoring 2 websites every minute
+
+require('dotenv').config();
 const axios = require('axios');
 const fetch = require('node-fetch')
-
-const NYCGOV_SITE = 'https://am-i-eligible.covid19vaccine.health.ny.gov/';
-const CVS_SITE = 'https://www.cvs.com/vaccine/intake/store/cvd-store-select/first-dose-select';
-const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/829747507994820685/QNSrFXL7kPQxsmHPwRe2jkHklG0YoBrr58ZfVVBr6W4qq5x3jMs5gDWtx8-yq3CT5byi'
+const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK
 
 let validProviderList = []
 let updatedValidProviderList = []
@@ -133,5 +133,3 @@ checkForChanges()
 setInterval(() => {
     checkForChanges()
 }, (60 * 1000))
-
-// currently only monitoring 2 websites every minute
