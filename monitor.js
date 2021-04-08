@@ -49,7 +49,14 @@ const checkForChanges = async () => {
             })
         } else {
             console.log(`-> Alert: Difference in provider list.`)
+            let status = ''
             validProviderList = updatedValidProviderList
+
+            if (updatedValidProviderList.length < validProviderList.length) {
+                status = '-> Appointments have been booked ❌'
+            } else if (updatedValidProviderList.length > validProviderList.length) {
+                status = '-> Appointments have been added ✅'
+            }
 
             axios({
                 method: 'post',
@@ -58,7 +65,7 @@ const checkForChanges = async () => {
                 data: {
                     embeds: [
                         {
-                            title: `Updated Vaccine List`,
+                            title: `Updated Vaccine List ${status}`,
                             description: `[Link To Form's Website](https://am-i-eligible.covid19vaccine.health.ny.gov/)`,
                             color: 1942002,
                             fields: fields,
