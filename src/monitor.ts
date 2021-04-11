@@ -1,27 +1,51 @@
-// currently only monitoring 2 websites every minute
-
+import axios from "axios"
+import fetch, { Response } from "node-fetch"
 require("dotenv").config();
-const axios = require("axios");
-const fetch = require("node-fetch");
-const DISCORD_WEBHOOK = process.env.DISCORD_WEBHOOK;
 
-let validProviderList = [];
-let updatedValidProviderList = [];
-let firstRun = true;
+const DISCORD_WEBHOOK: string | undefined = process.env.DISCORD_WEBHOOK;
+let validProviderList: RawProvider [] = [];
+let firstRun: boolean = true;
+
+interface RawProvider {
+  providerId: number;
+  providerName: string;
+  vaccineBrand: string;
+  address: string;
+  availableAppointments: string;
+  isShowable: boolean;
+}
+
+interface Field {
+  name: string;
+  value: string;
+}
+
+interface NYCGovSiteResponse {
+  providerList: RawProvider [];
+  lastUpdated: string;
+}
+
+interface CVSSiteResponse {
+  responseMetaData: {
+    statusCode: string;
+    statusDesc: string;
+    conversationID: string;
+    refId: string;
+  }
+}
 
 const checkForChanges = async () => {
-  const nycGovWebsite = await checkNYCGovSite();
-  const cvsWebsite = await checkCVSSite();
+  const nycGovWebsite: NYCGovSiteResponse = await checkNYCGovSite();
+  const cvsWebsite: CVSSiteResponse = await checkCVSSite();
+  const fields: Field [] = [];
 
-  const fields = [];
+  console.log("-> Checking for changes...");
 
-  console.log("-> Checking for changes.");
-
-  updatedValidProviderList = nycGovWebsite.providerList.filter(
-    (provider) => provider.availableAppointments === "Y"
+  const updatedValidProviderList: RawProvider [] = nycGovWebsite.providerList.filter(
+    (provider: RawProvider) => provider.availableAppointments === "Y"
   );
 
-  for (validProvider of updatedValidProviderList) {
+  for (let validProvider of updatedValidProviderList) {
     fields.push({
       name: `${validProvider.providerName} - Offering ${validProvider.vaccineBrand}`,
       value: `Location: ${validProvider.address}`,
@@ -29,7 +53,7 @@ const checkForChanges = async () => {
   }
 
   if (validProviderList.length !== updatedValidProviderList.length) {
-    let status = "";
+    let status: string = "";
 
     if (firstRun) {
       console.log("-> First time run.");
@@ -54,7 +78,7 @@ const checkForChanges = async () => {
       return;
     }
 
-    console.log(`-> Alert: Difference in provider list.`);
+    console.log(`-> Alert: Difference in provider list!`);
     validProviderList = updatedValidProviderList;
 
     if (updatedValidProviderList.length < validProviderList.length) {
@@ -112,9 +136,9 @@ const checkForChanges = async () => {
   }
 };
 
-const checkNYCGovSite = async () => {
+const checkNYCGovSite = async (): Promise<NYCGovSiteResponse> => {
   try {
-    const response = await fetch(
+    const response: Response = await fetch(
       "https://am-i-eligible.covid19vaccine.health.ny.gov/api/list-providers",
       {
         headers: {
@@ -122,18 +146,17 @@ const checkNYCGovSite = async () => {
           "accept-language": "en-US,en;q=0.9",
         },
         method: "GET",
-        mode: "cors",
       }
     );
     return await response.json();
   } catch (err) {
-    throw new Error("Invalid response " - err);
+    throw new Error("Invalid response " + err);
   }
 };
 
-const checkCVSSite = async () => {
+const checkCVSSite = async (): Promise<CVSSiteResponse> => {
   try {
-    const response = await fetch(
+    const response: Response = await fetch(
       "https://www.cvs.com/Services/ICEAGPV1/immunization/1.0.0/getIMZStores",
       {
         headers: {
@@ -141,17 +164,14 @@ const checkCVSSite = async () => {
           "accept-language": "en-US,en;q=0.9",
           "content-type": "application/json",
         },
-        referrer:
-          "https://www.cvs.com/vaccine/intake/store/cvd-store-select/first-dose-select",
         body:
           '{"requestMetaData":{"appName":"CVS_WEB","lineOfBusiness":"RETAIL","channelName":"WEB","deviceType":"DESKTOP","deviceToken":"7777","apiKey":"a2ff75c6-2da7-4299-929d-d670d827ab4a","source":"ICE_WEB","securityType":"apiKey","responseFormat":"JSON","type":"cn-dep"},"requestPayloadData":{"selectedImmunization":["CVD"],"distanceInMiles":50,"imzData":[{"imzType":"CVD","ndc":["59267100002","59267100003"],"allocationType":"1"}],"searchCriteria":{"addressLine":"11102"}}}',
         method: "POST",
-        mode: "cors",
       }
     );
     return await response.json();
   } catch (err) {
-    throw new Error("Invalid response " - err);
+    throw new Error("Invalid response " + err);
   }
 };
 
