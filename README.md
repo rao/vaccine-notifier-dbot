@@ -6,4 +6,4 @@ Instructions:
 1. Clone the repo
 2. Add a .env file, and create an environment variable for 'DISCORD_WEBHOOK'
 3. Install required packages with `npm install`
-4. Run `node monitor.js`
+4. Navigate to the dist/ folder, and then run `node monitor.js`
